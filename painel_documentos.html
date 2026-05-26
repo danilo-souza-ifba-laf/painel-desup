@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Repositório Institucional IFBA</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial, Helvetica, sans-serif;
+    background:#f4f7f5;
+    color:#1f2937;
+    padding:30px;
+}
+
+/* ======================================================
+   TOPO (BANNER)
+====================================================== */
+
+.topo{
+    margin: 0 auto 30px auto; /* O '0 auto' centraliza o banner na tela */
+    width: 60%;               /* Reduz o tamanho para 60% da largura total */
+    border-radius:18px;
+    overflow:hidden;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+}
+
+.topo-banner{
+    width:100%;
+    display:block;
+    height:auto;
+}
+
+/* ======================================================
+   FILTROS
+====================================================== */
+
+.filtros{
+    display:grid;
+    grid-template-columns:
+        1fr
+        240px
+        240px;
+    gap:15px;
+    margin-bottom:30px;
+}
+
+.filtros input,
+.filtros select{
+    padding:14px;
+    border-radius:12px;
+    border:1px solid #d1d5db;
+    background:white;
+    font-size:15px;
+    transition:0.2s;
+}
+
+.filtros input:focus,
+.filtros select:focus{
+    outline:none;
+    border-color:#107039;
+    box-shadow:
+        0 0 0 4px rgba(16,112,57,0.15);
+}
+
+/* ======================================================
+   CARDS
+====================================================== */
+
+.cards{
+    display:grid;
+    grid-template-columns:
+        repeat(auto-fill, minmax(320px,1fr));
+    gap:22px;
+}
+
+.card{
+    background:white;
+    border-radius:18px;
+    padding:22px;
+    box-shadow:
+        0 6px 14px rgba(0,0,0,0.08);
+    transition:0.25s;
+    border-top:6px solid #107039;
+}
+
+.card:hover{
+    transform:translateY(-5px);
+    box-shadow:
+        0 10px 20px rgba(0,0,0,0.12);
+}
+
+/* ======================================================
+   BADGES
+====================================================== */
+
+.badge{
+    display:inline-block;
+    background:#e7f5ec;
+    color:#107039;
+    padding:7px 12px;
+    border-radius:30px;
+    font-size:12px;
+    font-weight:bold;
+    margin-bottom:14px;
+}
+
+/* ======================================================
+   TITULO
+====================================================== */
+
+.card h2{
+    font-size:19px;
+    line-height:1.5;
+    margin-bottom:14px;
+    color:#1f2937;
+}
+
+/* ======================================================
+   INFOS
+====================================================== */
+
+.info{
+    margin-bottom:8px;
+    font-size:14px;
+    color:#4b5563;
+}
+
+/* ======================================================
+   TAGS
+====================================================== */
+
+.tags{
+    margin-top:14px;
+}
+
+.tag{
+    display:inline-block;
+    background:#eef7f1;
+    color:#107039;
+    padding:5px 10px;
+    border-radius:20px;
+    font-size:12px;
+    margin:3px;
+}
+
+/* ======================================================
+   BOTÃO
+====================================================== */
+
+.botao{
+    display:inline-block;
+    margin-top:20px;
+    background:#107039;
+    color:white;
+    text-decoration:none;
+    padding:13px 18px;
+    border-radius:12px;
+    font-weight:bold;
+    transition:0.2s;
+}
+
+.botao:hover{
+    background:#0c5a2d;
+}
+
+/* ======================================================
+   ESTADOS
+====================================================== */
+
+.loading{
+    text-align:center;
+    padding:50px;
+    font-size:20px;
+    color:#107039;
+}
+
+.sem-resultados{
+    text-align:center;
+    padding:50px;
+    color:#6b7280;
+    font-size:18px;
+}
+
+/* ======================================================
+   RESPONSIVO
+====================================================== */
+
+@media(max-width:900px){
+    .filtros{
+        grid-template-columns:1fr;
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="topo">
+    <img src="banner-painel.png" alt="Painel de Documentos de Gestão Acadêmica dos Cursos Superiores do IFBA" class="topo-banner">
+</div>
+
+<div class="filtros">
+
+    <input
+        type="text"
+        id="busca"
+        placeholder="Buscar documentos, cursos ou campi..."
+    >
+
+    <select id="filtroCampus">
+        <option value="">
+            Todos os campi
+        </option>
+    </select>
+
+    <select id="filtroCategoria">
+        <option value="">
+            Todas categorias
+        </option>
+    </select>
+
+</div>
+
+<div
+    id="resultado"
+    class="cards"
+>
+
+    <div class="loading">
+        Carregando documentos...
+    </div>
+
+</div>
+
+<script>
+
+// ======================================================
+// URL DA API
+// ======================================================
+
+const API_URL =
+"https://opensheet.elk.sh/1pKmuBqHYkf1AgmJRo_ZURs4PGqJPrLjDDlIeVkjJo5g/dados";
+
+let dados = [];
+
+
+// ======================================================
+// CARREGAR API
+// ======================================================
+
+async function carregarDados(){
+
+    try{
+
+        const resposta =
+            await fetch(API_URL);
+
+        dados =
+            await resposta.json();
+
+        preencherFiltros();
+
+        renderizarCards(dados);
+
+    }catch(erro){
+
+        console.error(erro);
+
+        document
+            .getElementById("resultado")
+            .innerHTML = `
+                <div class="sem-resultados">
+                    Erro ao carregar API
+                </div>
+            `;
+
+    }
+
+}
+
+
+// ======================================================
+// PREENCHER FILTROS
+// ======================================================
+
+function preencherFiltros(){
+
+    const campusSelect =
+        document.getElementById(
+            "filtroCampus"
+        );
+
+    const categoriaSelect =
+        document.getElementById(
+            "filtroCategoria"
+        );
+
+    const campi =
+        [...new Set(
+            dados.map(d => d.campus)
+        )].sort();
+
+    const categorias =
+        [...new Set(
+            dados.map(d => d.categoria)
+        )].sort();
+
+    campi.forEach(campus => {
+
+        campusSelect.innerHTML += `
+            <option value="${campus}">
+                ${campus}
+            </option>
+        `;
+
+    });
+
+    categorias.forEach(cat => {
+
+        categoriaSelect.innerHTML += `
+            <option value="${cat}">
+                ${cat}
+            </option>
+        `;
+
+    });
+
+}
+
+
+// ======================================================
+// RENDERIZAR CARDS
+// ======================================================
+
+function renderizarCards(lista){
+
+    const container =
+        document.getElementById(
+            "resultado"
+        );
+
+    if(lista.length === 0){
+
+        container.innerHTML = `
+            <div class="sem-resultados">
+                Nenhum documento encontrado
+            </div>
+        `;
+
+        return;
+
+    }
+
+    container.innerHTML = "";
+
+    lista.forEach(item => {
+
+        const tags =
+            item.tags
+            ? item.tags.split(",")
+            : [];
+
+        const html = `
+
+            <div class="card">
+
+                <div class="badge">
+                    ${item.categoria}
+                </div>
+
+                <h2>
+                    ${item.titulo}
+                </h2>
+
+                <div class="info">
+                    <strong>Campus:</strong>
+                    ${item.campus}
+                </div>
+
+                <div class="info">
+                    <strong>Curso:</strong>
+                    ${item.curso}
+                </div>
+
+                <div class="info">
+                    <strong>Modalidade:</strong>
+                    ${item.modalidade}
+                </div>
+
+        <a
+                    href="${item.link_drive}"
+                    target="_blank"
+                    class="botao"
+                >
+                    Acessar Documento
+                </a>
+
+            </div>
+
+        `;
+
+        container.innerHTML += html;
+
+    });
+
+}
+
+
+// ======================================================
+// FILTROS
+// ======================================================
+
+function aplicarFiltros(){
+
+    const busca =
+        document
+            .getElementById("busca")
+            .value
+            .toLowerCase();
+
+    const campus =
+        document
+            .getElementById(
+                "filtroCampus"
+            )
+            .value;
+
+    const categoria =
+        document
+            .getElementById(
+                "filtroCategoria"
+            )
+            .value;
+
+    const filtrados =
+        dados.filter(item => {
+
+            const matchBusca =
+
+                item.titulo
+                .toLowerCase()
+                .includes(busca)
+
+                ||
+
+                item.curso
+                .toLowerCase()
+                .includes(busca);
+
+            const matchCampus =
+                !campus
+                || item.campus === campus;
+
+            const matchCategoria =
+                !categoria
+                || item.categoria === categoria;
+
+            return (
+                matchBusca
+                &&
+                matchCampus
+                &&
+                matchCategoria
+            );
+
+        });
+
+    renderizarCards(filtrados);
+
+}
+
+
+// ======================================================
+// EVENTOS
+// ======================================================
+
+document
+.getElementById("busca")
+.addEventListener(
+    "input",
+    aplicarFiltros
+);
+
+document
+.getElementById("filtroCampus")
+.addEventListener(
+    "change",
+    aplicarFiltros
+);
+
+document
+.getElementById("filtroCategoria")
+.addEventListener(
+    "change",
+    aplicarFiltros
+);
+
+
+// ======================================================
+// INICIAR
+// ======================================================
+
+carregarDados();
+
+</script>
+
+</body>
+</html>
